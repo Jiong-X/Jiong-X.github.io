@@ -42,11 +42,11 @@
 - title: Academic Interests
   type: nested_list
   contents:
-    - title: Topic 1.
+    - title: Dynamic Control
       items:
         - Description 1.
         - Description 2.
-    - title: Topic 2.
+    - title: Program Induction
       items:
         - Description 1.
         - Description 2.

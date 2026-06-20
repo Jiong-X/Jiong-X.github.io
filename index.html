@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jiong Xiao</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+</head>
+<body>
+
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a class="nav-name" href="index.html">Jiong Xiao 肖炅</a>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="publications.html">Publications</a></li>
+                <li><a href="contact.html">Say hi</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="hero-inner">
+                <div class="hero-photo">
+                    <img src="photo.jpg" alt="Jiong Xiao" class="hero-img">
+                </div>
+                <div class="hero-text">
+                    <p class="hero-eyebrow">MSc Student · Cognitive &amp; Decision Sciences</p>
+                    <p style="font-size:0.82rem; color:var(--muted); font-style:italic; margin-top:6px; margin-bottom:0;">In Chinese, family name comes first — 肖 (Xiāo) is my family name, 炅 (Jiǒng) my given name.</p>
+                    <h1>Jiong Xiao 肖炅 <button id="pronounce-btn" title="Hear my name" style="background:none;border:none;cursor:pointer;font-size:1.1rem;vertical-align:middle;color:var(--muted);padding:0 4px;">🔊</button></h1>
+                    <p class="hero-affil">University College London &nbsp;·&nbsp; London, UK</p>
+                    <p class="hero-bio">
+                        I'm fascinated by how people figure things out — how we learn cause and effect,
+                        build mental models, and make decisions when we don't have the full picture.
+                        I run behavioural experiments and build computational models to understand
+                        how the mind simplifies a complex world.
+                    </p>
+                    <div class="hero-links">
+                        <a href="mailto:4773019xj@gmail.com" class="btn btn-outline btn-icon" title="Email"><i class="fa-solid fa-envelope"></i></a>
+                        <a href="CV_jiong.pdf" class="btn btn-outline btn-icon" target="_blank" title="CV"><i class="ai ai-cv"></i></a>
+                        <a href="https://bsky.app/profile/jiongx.bsky.social" class="btn btn-outline btn-icon" target="_blank" title="Bluesky"><i class="fa-brands fa-bluesky"></i></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="home-divider">
+
+        <div class="container">
+            <div class="home-grid">
+                <a href="about.html" class="home-card">
+                    <p class="home-card-label">About</p>
+                    <h3>Who I am</h3>
+                    <p>Background, education, and what I get up to outside the lab.</p>
+                </a>
+                <a href="projects.html" class="home-card">
+                    <p class="home-card-label">Projects</p>
+                    <h3>Things I've built</h3>
+                    <p>Experiments, tools, and collaborations — including a live task you can try.</p>
+                </a>
+                <a href="publications.html" class="home-card">
+                    <p class="home-card-label">Publications</p>
+                    <h3>Writing</h3>
+                    <p>Papers, conference proceedings, and preprints.</p>
+                </a>
+                <a href="contact.html" class="home-card">
+                    <p class="home-card-label">Contact</p>
+                    <h3>Get in touch</h3>
+                    <p>I'm always happy to hear from collaborators or curious people.</p>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 Jiong Xiao</p>
+    </footer>
+
+    <script>
+        document.getElementById('pronounce-btn').addEventListener('click', function () {
+            const utt = new SpeechSynthesisUtterance('肖炅');
+            utt.lang = 'zh-CN';
+            utt.rate = 0.85;
+            speechSynthesis.speak(utt);
+        });
+    </script>
+</body>
+</html>

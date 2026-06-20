@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects — Your Name</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a class="nav-name" href="index.html">Jiong Xiao 肖炅</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="projects.html" class="active">Projects</a></li>
+                <li><a href="publications.html">Publications</a></li>
+                <li><a href="contact.html">Say hi</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <div class="page-header-inner">
+                <h1>Projects</h1>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="projects-list">
+
+                <!-- Featured: the experiment -->
+                <div class="project-card project-featured">
+                    <div class="project-header">
+                        <div>
+                            <span class="project-tag">Behavioural experiment</span>
+                            <h3 class="project-title">Control in Multidimensional Environments</h3>
+                        </div>
+                        <a href="experiment3/index.html" class="btn btn-sm" target="_blank">Open ↗</a>
+                    </div>
+                    <p class="project-desc">
+                        Can you move an outcome to a target zone — without being told what the inputs actually do? We 
+                        introduce a bivariate control task where participants need to keep the outcome in a target zone
+                        by manipulating two inputs. Try the task below! 
+                        
+                    </p>
+                    <div class="project-embed">
+                        <iframe id="exp-frame" src="experiment3/index.html" title="Control in Multidimensional Environments" allowfullscreen scrolling="no"></iframe>
+                        <p class="embed-caption">Move sliders A and B · press Space to reveal the outcome · click reset
+                            to start a new trial with a new hidden rule
+                        </p>
+                    </div>
+                    <div class="project-tags">
+                        <span>Control</span>
+                        <span>Function learning</span>
+                        <span>Action Selection</span>
+                        <span>Resource-rationality</span>
+                        <span>World models</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2025 Your Name</p>
+    </footer>
+
+    <script>
+        const frame = document.getElementById('exp-frame');
+        frame.addEventListener('load', function () {
+            const body = frame.contentDocument.body;
+            const h = body.offsetHeight || body.scrollHeight;
+            frame.style.height = (h + 20) + 'px';
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slider Control Experiment</title>
+    <link rel="stylesheet" href="experiment.css?v=2">
+    <script src="Chart.min.js"></script>
+</head>
+<body>
+    <h2 style="text-align:center;">Slider Control Task</h2>
+
+    <div class="info-bar">
+        <span>Rule: <strong id="func-name" style="display:inline-block;min-width:200px;">Linear Sum</strong></span>
+        <button id="rule-reveal-btn">Hide Rule</button>
+        <span>Steps: <strong id="step-count">0</strong> / 40</span>
+        <span>Score: <strong id="score-display">0</strong></span>
+        <div style="position:relative;">
+            <button id="rule-toggle">Rule ▾</button>
+            <div id="rule-dropdown" style="display:none; position:absolute; top:110%; left:0; background:#fff; border:1px solid #bbb; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:100; min-width:180px; padding:4px 0;">
+                <div class="rule-option" data-value="linear_sum">Linear Sum</div>
+                <div class="rule-option" data-value="exp_sum">Exponential Sum</div>
+                <div class="rule-option" data-value="quadratic_sum">Quadratic Sum</div>
+                <div class="rule-option" data-value="linear_product">Linear Product</div>
+                <div class="rule-option" data-value="exp_product">Exponential Product</div>
+                <div class="rule-option" data-value="quadratic_product">Quadratic Product</div>
+                <div class="rule-option" data-value="ridge_sum">Ridge Sum</div>
+            </div>
+        </div>
+        <button id="reset-btn">Reset</button>
+    </div>
+
+    <div class="instructions">
+        Move sliders <span class="label-a">A</span> and <span class="label-b">B</span>
+        to control outcome <span class="label-c">C</span>.
+        Keep <span class="label-c">C</span> in the
+        <span class="target-word">target zone</span>.
+        Press <kbd>Space</kbd> to advance one step.
+    </div>
+
+    <div class="main-layout">
+
+        <!-- Sliders — both on the left -->
+        <div class="sliders-panel">
+            <div class="slider-wrap">
+                <div class="slider-label label-a">A</div>
+                <div class="slider-track-outer" id="track-a">
+                    <div class="slider-fill" id="fill-a"></div>
+                    <div class="slider-handle handle-a" id="handle-a"></div>
+                    <input type="range" min="0" max="30" value="15"
+                           class="custom-slider" id="slider-a" orient="vertical">
+                </div>
+                <div class="slider-val" id="val-a">150</div>
+            </div>
+
+            <div class="slider-wrap">
+                <div class="slider-label label-b">B</div>
+                <div class="slider-track-outer" id="track-b">
+                    <div class="slider-fill" id="fill-b"></div>
+                    <div class="slider-handle handle-b" id="handle-b"></div>
+                    <input type="range" min="0" max="30" value="15"
+                           class="custom-slider" id="slider-b" orient="vertical">
+                </div>
+                <div class="slider-val" id="val-b">150</div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-container">
+            <canvas id="progressPlot"></canvas>
+        </div>
+
+    </div>
+
+    <div style="text-align:center; margin-top:6px;">
+        <span class="hit-indicator" id="hit-indicator"></span>
+    </div>
+
+    <script src="experiment.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publications — Jiong Xiao</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav id="navbar">
+        <div class="nav-inner">
+            <a class="nav-name" href="index.html">Jiong Xiao 肖炅</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="projects.html">Projects</a></li>
+                <li><a href="publications.html" class="active">Publications</a></li>
+                <li><a href="contact.html">Say hi</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="page-header">
+            <div class="page-header-inner">
+                <h1>Publications</h1>
+                <p>Papers, proceedings, and preprints.</p>
+            </div>
+        </div>
+
+        <div class="container">
+
+            <div class="pub-year-group">
+                <span class="pub-year-label">2026</span>
+                <div class="pub-list">
+                    <div class="pub-item">
+                        <p class="pub-title">The benefits of staying local: Bounded adaptive control by modeling linearly and acting locally</p>
+                        <p class="pub-authors"><strong>Xiao, J.</strong> and Bramley, N. R.</p>
+                        <p class="pub-venue">The 48th Annual Meeting of the Cognitive Science Society. Austin, TX.</p>
+                        <button class="abstract-toggle" onclick="this.nextElementSibling.classList.toggle('open'); this.textContent = this.nextElementSibling.classList.contains('open') ? '▲' : '▼'">▼</button>
+                        <div class="abstract-body">
+                            Humans have bounded resources and rely on various inductive biases in solve various kinds of problems. While a large body of literature have explored how humans form hypotheses and make predictions from a large hypothesis space,
+                            how humans select actions from an immersive action space that is multidimensional and continuous is relatively underexplored. We introduce a bivariate task where participants need to control the outcome variable via manipulating 
+                            two input variables. The inputs determine the output via different latent functions in different condtions. Based on behavroual experiments and computational modelling, our preliminary study shows evidence that people tend to control one instead of two variables at a time.  
+                            We suggest that humans simplify the problem of action selection by simplifying the two-dimensional action selection problem into a one-dimensional one, illustrating a rational use of resources that potentially minimises both the cognitive and motor costs. 
+                            Moreover, we found suggestive evidence that people tend to project a local linear monotonic relationship in modelling the relationship between the inputs and the outputs. The algorithm underlying people's action selection exhibits particular inductive biases (e.g., biases 
+                            toward linearity) and relies on few data points. 
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 Jiong Xiao</p>
+    </footer>
+
+</body>
+</html>

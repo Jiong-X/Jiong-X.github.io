@@ -49,7 +49,8 @@ const ruleNames = {
     linear_product:    'Linear Product',
     exp_product:       'Exponential Product',
     quadratic_product: 'Quadratic Product',
-    ridge_sum:         'Ridge Sum'
+    ridge_sum:         'Ridge Sum',
+    ridge_product:     'Ridge Product'
 };
 
 // ── Conditions ──
@@ -180,9 +181,17 @@ function computeC(a, b) {
                 c = ((h(a) + 30) * (h(b) + 30) - 900) / 160;
             }
             break;
+        case 'ridge_product':
+            // V-shaped valley, product version of Ridge Sum:
+            // g(x) = 2·|x − 50|, 0 at x = 50 and 100 at the edges
+            {
+                const v = x => 2 * Math.abs(x - M);
+                c = ((v(a) + 30) * (v(b) + 30) - 900) / 160;
+            }
+            break;
         case 'ridge_sum':
-            // tent: C = min(A, 100−A) + min(B, 100−B); 100 at (50,50)
-            c = Math.min(a, R-a) + Math.min(b, R-b); break;
+            // V-shaped valley: C = |A−50| + |B−50|; 0 at (50,50), 100 at corners
+            c = Math.abs(a - M) + Math.abs(b - M); break;
         default:
             c = 0.5*a + 0.5*b;
     }

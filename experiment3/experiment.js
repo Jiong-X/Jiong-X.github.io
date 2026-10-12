@@ -64,6 +64,8 @@ const JUMP_SD   = 10;
 // Adjacent target zones must not overlap: each zone spans ±TARGET_HALF, so
 // consecutive targets must be more than 2·TARGET_HALF apart.
 const MIN_JUMP = 2 * TARGET_HALF + 1;
+// Closest a target zone may come to the edge of the scale (0 or 100).
+const EDGE_GAP = 5;
 const CONDITIONS = {
     hard_first: { label: 'Hard first', meanFirstHalf: MEAN_HARD, meanSecondHalf: MEAN_EASY },
     easy_first: { label: 'Easy first', meanFirstHalf: MEAN_EASY, meanSecondHalf: MEAN_HARD }
@@ -90,9 +92,10 @@ function randn() {
 // Index 0 is the starting point (initial C, no target). Targets run from
 // step 1 to step nSteps. Step 1's target is a random integer. The direction
 // (up or down) is chosen at random once, and the target keeps moving that way.
-// If a jump would push the zone past the edge of the scale, the target is
-// placed as close to that edge as possible (zone flush with the edge) and the
-// direction reverses for the following steps. If the target is already too
+// If a jump would push the zone past the allowed range, the target is
+// placed at the edge of that range — the zone sits EDGE_GAP points in from
+// the boundary of the scale — and the direction reverses for the following
+// steps. If the target is already too
 // close to the edge for that (the move would be under MIN_JUMP), it turns
 // round straight away instead.
 // Each jump distance is drawn from N(mean, JUMP_SD), where the mean is set by
@@ -100,7 +103,8 @@ function randn() {
 // is below MIN_JUMP (zones would overlap).
 function generateTrajectory(nSteps) {
     const cfg = CONDITIONS[condition];
-    const lo = TARGET_HALF, hi = SLIDER_MAX - TARGET_HALF;   // zone flush with the edges
+    // Zone stays EDGE_GAP points inside the scale: centres 10–90 (zones 5–15 … 85–95)
+    const lo = TARGET_HALF + EDGE_GAP, hi = SLIDER_MAX - TARGET_HALF - EDGE_GAP;
     const half = nSteps / 2;
     let t = lo + Math.floor(Math.random() * (hi - lo + 1));
     let dir = Math.random() < 0.5 ? -1 : 1;

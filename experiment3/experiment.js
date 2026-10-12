@@ -1,7 +1,8 @@
 // ── Constants ──
 const SLIDER_MIN  = 0;
-const SLIDER_MAX  = 30;
-const TARGET_HALF = 1.5;
+const SLIDER_MAX  = 100;
+const SLIDER_MID  = SLIDER_MAX / 2;
+const TARGET_HALF = 5;      // target zone = ±5 (10% of range, as before)
 const TRACK_H     = 380;
 const HANDLE_H    = 18;   // handle height in px (rect)
 const MAX_STEPS   = 40;
@@ -16,7 +17,7 @@ const rCurrent = 'rgba(46, 160, 67, 0.65)';  // green for current target column
 let functionalForm   = 'linear_sum';
 let stepCount        = 0;
 let score            = 0;
-let targetCentre     = 150;
+let targetCentre     = SLIDER_MID;
 let cHistory         = {};
 let hitHistory       = {};   // step → boolean
 let targetTrajectory = [];   // pre-generated random trajectory
@@ -39,6 +40,7 @@ const resetBtn       = document.getElementById('reset-btn');
 const funcName       = document.getElementById('func-name');
 const ruleRevealBtn  = document.getElementById('rule-reveal-btn');
 let   ruleVisible    = false;
+const condSelect     = document.getElementById('cond-select');
 
 const ruleNames = {
     linear_sum:        'Linear Sum',
@@ -50,49 +52,133 @@ const ruleNames = {
     ridge_sum:         'Ridge Sum'
 };
 
+// ── Conditions ──
+// The distance between consecutive targets is drawn from a normal
+// distribution; its mean depends on the condition and on which half of the
+// task we are in. Direction (up/down) is random. Units: 0–100 scale.
+// Hard phase: mean 40; easy phase: mean 20; SD 10 in both. Each condition runs
+// one phase per half (steps 1–20, then 21–40), in opposite orders.
+const MEAN_HARD = 40;
+const MEAN_EASY = 20;
+const JUMP_SD   = 10;
+// Adjacent target zones must not overlap: each zone spans ±TARGET_HALF, so
+// consecutive targets must be more than 2·TARGET_HALF apart.
+const MIN_JUMP = 2 * TARGET_HALF + 1;
+const CONDITIONS = {
+    hard_first: { label: 'Hard first', meanFirstHalf: MEAN_HARD, meanSecondHalf: MEAN_EASY },
+    easy_first: { label: 'Easy first', meanFirstHalf: MEAN_EASY, meanSecondHalf: MEAN_HARD }
+};
+let condition = pickCondition();
+
+// Condition comes from ?cond=hard_first|easy_first, otherwise random.
+function pickCondition() {
+    const fromUrl = new URLSearchParams(window.location.search).get('cond');
+    if (fromUrl && CONDITIONS[fromUrl]) return fromUrl;
+    const keys = Object.keys(CONDITIONS);
+    return keys[Math.floor(Math.random() * keys.length)];
+}
+
+// Standard normal via Box–Muller.
+function randn() {
+    let u = 0, v = 0;
+    while (u === 0) u = Math.random();
+    while (v === 0) v = Math.random();
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
 // ── Random target trajectory ──
-// Smooth random walk with momentum, clamped to valid range.
+// Index 0 is the starting point (initial C, no target). Targets run from
+// step 1 to step nSteps. Step 1's target is a random integer. The direction
+// (up or down) is chosen at random once, and the target keeps moving that way.
+// If a jump would push the zone past the edge of the scale, the target is
+// placed as close to that edge as possible (zone flush with the edge) and the
+// direction reverses for the following steps. If the target is already too
+// close to the edge for that (the move would be under MIN_JUMP), it turns
+// round straight away instead.
+// Each jump distance is drawn from N(mean, JUMP_SD), where the mean is set by
+// the half (steps 2–20 first half, 21–40 second half), and is redrawn if it
+// is below MIN_JUMP (zones would overlap).
 function generateTrajectory(nSteps) {
-    const traj = [];
-    const lo = TARGET_HALF + 1, hi = SLIDER_MAX - TARGET_HALF - 1;
-    for (let i = 0; i <= nSteps + 15; i++) {
-        traj.push(Math.round(lo + Math.random() * (hi - lo)));
+    const cfg = CONDITIONS[condition];
+    const lo = TARGET_HALF, hi = SLIDER_MAX - TARGET_HALF;   // zone flush with the edges
+    const half = nSteps / 2;
+    let t = lo + Math.floor(Math.random() * (hi - lo + 1));
+    let dir = Math.random() < 0.5 ? -1 : 1;
+    const traj = [null, t];
+    for (let i = 2; i <= nSteps; i++) {
+        const mean = (i <= half) ? cfg.meanFirstHalf : cfg.meanSecondHalf;
+        let next = null;
+        while (next === null) {
+            const dist = Math.round(mean + randn() * JUMP_SD);
+            if (dist < MIN_JUMP) continue;
+            const edge = dir > 0 ? hi : lo;
+            if (t + dir * dist >= lo && t + dir * dist <= hi) {
+                next = t + dir * dist;                    // keep going
+            } else if (Math.abs(edge - t) >= MIN_JUMP) {
+                next = edge;                              // stop at the edge…
+                dir = -dir;                               // …and head back next time
+            } else {
+                dir = -dir;                               // already at the edge: turn round
+                if (t + dir * dist >= lo && t + dir * dist <= hi) next = t + dir * dist;
+                else dir = -dir;                          // doesn't fit either way: redraw
+            }
+        }
+        t = next;
+        traj.push(t);
     }
     return traj;
 }
 
 function getTarget(step) {
-    if (step < 0) step = 0;
+    if (step < 1) step = 1;
     return targetTrajectory[step] !== undefined
         ? targetTrajectory[step]
         : targetTrajectory[targetTrajectory.length - 1];
 }
 
-// ── Causal rules (from sliders.js) ──
+// ── Causal rules ──
+// All rules map A, B ∈ [0, 100] to C ∈ [0, 100].
 function computeC(a, b) {
+    const R = SLIDER_MAX, M = SLIDER_MID;
     let c;
     switch (functionalForm) {
         case 'linear_sum':
-            // c = 0.5a + 0.5b; range [0,30]
+            // C = 0.5A + 0.5B
             c = 0.5 * a + 0.5 * b; break;
         case 'exp_sum':
-            // exponential, 0 at (0,0), 30 at (30,30)
-            c = 15*(Math.exp(a/10)-1)/(Math.exp(3)-1) + 15*(Math.exp(b/10)-1)/(Math.exp(3)-1); break;
+            // C = 50·(e^(3A/100) − 1)/(e^3 − 1) + 50·(e^(3B/100) − 1)/(e^3 − 1)
+            c = M*(Math.exp(3*a/R)-1)/(Math.exp(3)-1) + M*(Math.exp(3*b/R)-1)/(Math.exp(3)-1); break;
         case 'quadratic_sum':
-            // U-shaped: min 0 at (15,15), max 30 at corners
-            c = (a-15)*(a-15)/15 + (b-15)*(b-15)/15; break;
+            // U-shaped: C = (A−50)²/50 + (B−50)²/50; 0 at (50,50), 100 at corners
+            c = (a-M)*(a-M)/M + (b-M)*(b-M)/M; break;
+        // ── Multiplicative rules ──
+        // Each slider goes through its own curve g (0 → 100), then
+        //   C = ((g(A) + 30) · (g(B) + 30) − 900) / 160
+        // The +30 offset means no single slider can take C anywhere alone
+        // (at best it covers ~19–100); subtracting 900 (= 30·30) and dividing
+        // by 160 rescales so C runs exactly 0 → 100. C = 0 only when
+        // g(A) = g(B) = 0.
         case 'linear_product':
-            // c = a*b/30; range [0,30]
-            c = a * b / 30; break;
+            // g(x) = x
+            c = ((a + 30) * (b + 30) - 900) / 160; break;
         case 'exp_product':
-            // exponential product, 0 at origin, 30 at (30,30)
-            c = 30 * (Math.exp(a/30)-1) * (Math.exp(b/30)-1) / ((Math.E-1)*(Math.E-1)); break;
+            // g(x) = 100·(e^(3x/100) − 1)/(e³ − 1): flat, then steep
+            {
+                const u = x => R * (Math.exp(3*x/R) - 1) / (Math.exp(3) - 1);
+                c = ((u(a) + 30) * (u(b) + 30) - 900) / 160;
+            }
+            break;
         case 'quadratic_product':
-            // hill: 0 at boundaries, 30 at centre (15,15)
-            c = 16 * a * (30-a) * b * (30-b) / 27000; break;
+            // Valley (as in the original R version):
+            // g(x) = (x − 50)²/25, 0 at x = 50 and 100 at the edges
+            {
+                const h = x => (x - M) * (x - M) / (M * M / R);
+                c = ((h(a) + 30) * (h(b) + 30) - 900) / 160;
+            }
+            break;
         case 'ridge_sum':
-            // tent/ridge: peaks at (15,15)=30, 0 at boundaries, nonmonotonic
-            c = Math.min(a, 30-a) + Math.min(b, 30-b); break;
+            // tent: C = min(A, 100−A) + min(B, 100−B); 100 at (50,50)
+            c = Math.min(a, R-a) + Math.min(b, R-b); break;
         default:
             c = 0.5*a + 0.5*b;
     }
@@ -118,29 +204,30 @@ function updateAB() {
 }
 
 // ── Chart window helpers ──
-// Centre: last revealed step (or 5 if < 5 steps taken), so revealed dot lands at index 5.
-function chartCentre() { return Math.max(5, stepCount - 1); }
+// Column 0 = step 0 (initial C, no target); column k = step k.
+// Once past step 5 the window scrolls so the latest C dot stays at index 5.
+function windowStart() { return Math.max(0, stepCount - 5); }
 
-// Index of the last revealed C dot within the 11-column window.
-function dotIndex() {
-    if (stepCount === 0) return -1;
-    return (stepCount - 1) - (chartCentre() - 5);
-}
+// Index of the latest revealed C dot (initial C at the start).
+function dotIndex() { return stepCount - windowStart(); }
 
 // Index of the CURRENT target column (the step the participant is aiming for next).
-function targetColIndex() {
-    return stepCount - (chartCentre() - 5);
-}
+function targetColIndex() { return stepCount + 1 - windowStart(); }
 
 function buildChartData() {
-    const centre = chartCentre();
+    const start = windowStart();
     const labels = [], data = [];
-    for (let i = -5; i <= 5; i++) {
-        const s = centre + i;
-        labels.push(Math.max(0, s));
-        data.push(s >= 0 && cHistory[s] !== undefined ? cHistory[s] : null);
+    for (let i = 0; i <= 10; i++) {
+        const s = start + i;
+        labels.push(s);
+        data.push(cHistory[s] !== undefined ? cHistory[s] : null);
     }
     return { labels, data };
+}
+
+// Initial C: the outcome with both sliders at their starting position.
+function setInitialC() {
+    cHistory[0] = computeC(SLIDER_MID, SLIDER_MID);
 }
 
 // ── Chart ──
@@ -160,7 +247,7 @@ function setupChart() {
                 borderWidth: 2,
                 pointRadius: function(ctx) {
                     if (ctx.dataIndex !== dotIndex()) return 4;
-                    const stepNum = chart.data.labels[ctx.dataIndex];
+                    const stepNum = ctx.chart.data.labels[ctx.dataIndex];
                     return hitHistory[stepNum] ? 6 : 4;
                 },
                 pointBackgroundColor: zColour,
@@ -174,7 +261,7 @@ function setupChart() {
             legend: { display: false },
             animation: { duration: 0 },
             scales: {
-                yAxes: [{ ticks: { suggestedMin: 0, suggestedMax: 30, beginAtZero: false } }],
+                yAxes: [{ ticks: { suggestedMin: 0, suggestedMax: SLIDER_MAX, beginAtZero: false } }],
                 xAxes: [{ scaleLabel: { display: true, labelString: 'Steps' } }]
             }
         },
@@ -191,6 +278,7 @@ function setupChart() {
 
                 for (let i = 0; i < 11; i++) {
                     const stepNum = ch.data.labels[i];
+                    if (stepNum === 0 || stepNum > MAX_STEPS) continue;   // no target at start or after the last step
                     const tc      = getTarget(stepNum);
                     const yTop    = area.top + ((SLIDER_MAX - (tc + TARGET_HALF)) / SLIDER_MAX) * chartH;
                     const rectH   = (TARGET_HALF * 2 / SLIDER_MAX) * chartH;
@@ -219,10 +307,11 @@ function step() {
     const a = +sliderA.value, b = +sliderB.value;
     const c = computeC(a, b);
 
-    cHistory[stepCount] = c;
+    const thisStep = stepCount + 1;
+    cHistory[thisStep] = c;
 
     const inTarget = c >= targetCentre - TARGET_HALF && c <= targetCentre + TARGET_HALF;
-    hitHistory[stepCount] = inTarget;
+    hitHistory[thisStep] = inTarget;
     if (inTarget) {
         score++;
         scoreDisplay.textContent = score;
@@ -233,11 +322,11 @@ function step() {
 
     stepCount++;
     stepDisplay.textContent = stepCount;
-    targetCentre = getTarget(stepCount);
+    targetCentre = getTarget(stepCount + 1);
 
     // Reset sliders to centre for next step
-    sliderA.value = 15;
-    sliderB.value = 15;
+    sliderA.value = SLIDER_MID;
+    sliderB.value = SLIDER_MID;
     updateAB();
 
     refreshChart();
@@ -261,11 +350,12 @@ function resetExperiment() {
     stepDisplay.textContent  = 0;
     scoreDisplay.textContent = 0;
     hitIndicator.textContent = '';
-    sliderA.value = 15;
-    sliderB.value = 15;
+    sliderA.value = SLIDER_MID;
+    sliderB.value = SLIDER_MID;
     targetTrajectory = generateTrajectory(MAX_STEPS);
-    targetCentre     = getTarget(0);
+    targetCentre     = getTarget(1);
     pickRandomRule();
+    setInitialC();
     updateAB();
     if (chart) refreshChart();
 }
@@ -287,6 +377,7 @@ ruleDropdown.querySelectorAll('.rule-option').forEach(function (el) {
         ruleDropdown.querySelectorAll('.rule-option').forEach(o => o.classList.remove('active'));
         this.classList.add('active');
         ruleDropdown.style.display = 'none';
+        if (stepCount === 0) { setInitialC(); refreshChart(); }
     });
 });
 
@@ -302,6 +393,12 @@ ruleRevealBtn.addEventListener('click', function () {
 
 resetBtn.addEventListener('click', resetExperiment);
 
+condSelect.addEventListener('change', function () {
+    condition = this.value;
+    resetExperiment();
+    this.blur();   // keep Space for stepping
+});
+
 document.addEventListener('keydown', function (e) {
     if (e.code === 'Space') {
         e.preventDefault();
@@ -310,8 +407,16 @@ document.addEventListener('keydown', function (e) {
 });
 
 // ── Init ──
+Object.keys(CONDITIONS).forEach(function (k) {
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = CONDITIONS[k].label;
+    condSelect.appendChild(opt);
+});
+condSelect.value = condition;
 targetTrajectory = generateTrajectory(MAX_STEPS);
-targetCentre     = getTarget(0);
+targetCentre     = getTarget(1);
+setInitialC();
 updateAB();
 setupChart();
 // Start with rule hidden

@@ -26,6 +26,7 @@
                 <div class="rule-option" data-value="ridge_sum">Ridge Sum</div>
             </div>
         </div>
+        <label>Condition: <select id="cond-select"></select></label>
         <button id="reset-btn">Reset</button>
     </div>
 
@@ -46,10 +47,10 @@
                 <div class="slider-track-outer" id="track-a">
                     <div class="slider-fill" id="fill-a"></div>
                     <div class="slider-handle handle-a" id="handle-a"></div>
-                    <input type="range" min="0" max="30" value="15"
+                    <input type="range" min="0" max="100" value="50"
                            class="custom-slider" id="slider-a" orient="vertical">
                 </div>
-                <div class="slider-val" id="val-a">150</div>
+                <div class="slider-val" id="val-a">50</div>
             </div>
 
             <div class="slider-wrap">
@@ -57,10 +58,10 @@
                 <div class="slider-track-outer" id="track-b">
                     <div class="slider-fill" id="fill-b"></div>
                     <div class="slider-handle handle-b" id="handle-b"></div>
-                    <input type="range" min="0" max="30" value="15"
+                    <input type="range" min="0" max="100" value="50"
                            class="custom-slider" id="slider-b" orient="vertical">
                 </div>
-                <div class="slider-val" id="val-b">150</div>
+                <div class="slider-val" id="val-b">50</div>
             </div>
         </div>
 
@@ -75,6 +76,6 @@
         <span class="hit-indicator" id="hit-indicator"></span>
     </div>
 
-    <script src="experiment.js"></script>
+    <script src="experiment.js?v=3"></script>
 </body>
 </html>

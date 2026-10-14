@@ -223,3 +223,41 @@ body.large .slider-fill { border-radius: 0 0 45px 45px; }
 body.large .slider-handle { width: 78px; height: 24px; }
 body.large .target-band,
 body.large .prev-marker { left: -8px; width: 106px; }
+
+/* ── Result display / previous values on C ── */
+.c-line {
+    position: absolute;
+    left: -6px;
+    width: 72px;
+    height: 0;
+    border-top: 3px dashed #2e7d32;
+    margin-bottom: -1.5px;
+    z-index: 4;
+    pointer-events: none;
+}
+.prev-target {
+    position: absolute;
+    left: -6px;
+    width: 72px;
+    box-sizing: border-box;
+    border: 2px dashed rgba(249,168,37,0.95);
+    background: transparent;
+    z-index: 3;
+    pointer-events: none;
+}
+.star {
+    position: absolute;
+    left: calc(100% + 10px);
+    transform: translateY(50%);
+    font-size: 30px;
+    line-height: 1;
+    color: #f9a825;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+    z-index: 6;
+    pointer-events: none;
+}
+.sliders-panel.locked input[type="range"].custom-slider { pointer-events: none; }
+
+body.large .c-line,
+body.large .prev-target { left: -8px; width: 106px; }
+body.large .star { font-size: 40px; }

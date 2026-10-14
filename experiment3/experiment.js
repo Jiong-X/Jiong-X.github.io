@@ -27,6 +27,9 @@ let hitHistory       = {};   // step → boolean
 let aHistory         = {};   // step → A value used
 let aSet             = false; // has the participant placed A this step?
 let bSet             = false; // has the participant placed B this step?
+let pending          = false; // true during the 1 s result display after Space
+let pendingTimer     = null;
+const RESULT_MS      = 1000;  // how long the result is shown before the next target appears
 let bHistory         = {};   // step → B value used
 let targetTrajectory = [];   // pre-generated random trajectory
 
@@ -45,6 +48,10 @@ const fillC        = document.getElementById('fill-c');
 const handleC      = document.getElementById('handle-c');
 const targetBandC  = document.getElementById('target-band-c');
 const prevA        = document.getElementById('prev-a');
+const cLine        = document.getElementById('c-line');
+const prevTargetC  = document.getElementById('prev-target-c');
+const starC        = document.getElementById('star-c');
+const slidersPanel = document.querySelector('.sliders-panel');
 const prevB        = document.getElementById('prev-b');
 const stepDisplay  = document.getElementById('step-count');
 const scoreDisplay = document.getElementById('score-display');
@@ -238,7 +245,7 @@ function updateAB() {
 // Dotted markers for the A and B values used on the previous step.
 function updatePrevMarkers() {
     // No markers before the first step has been taken
-    const show = stepCount > 0;
+    const show = stepCount > 0 && !pending;
     prevA.style.display = show ? 'block' : 'none';
     prevB.style.display = show ? 'block' : 'none';
     if (!show) return;
@@ -251,20 +258,42 @@ function updatePrevMarkers() {
 // Shows the most recently revealed C (it only updates when Space is pressed,
 // so it never gives away C before the participant commits) and the target
 // region for the step they are aiming at next.
+function placeBand(el, centre) {
+    el.style.display = 'block';
+    el.style.bottom  = ((centre - TARGET_HALF) / SLIDER_MAX) * TRACK_H + 'px';
+    el.style.height  = (2 * TARGET_HALF / SLIDER_MAX) * TRACK_H + 'px';
+}
+
+// Two states:
+//  • result (pending, first second after Space): solid C handle at the new
+//    value, the target it was aimed at still shown solid yellow, star if hit.
+//  • rest: C shown as a green dashed line, the target just used as a dashed
+//    yellow box, and the next target as a solid yellow box.
 function updateC() {
     const c = cHistory[stepCount];
     if (c !== undefined) {
         valC.textContent = c;
         fillC.style.height = fillPct(c) + '%';
         positionHandle(handleC, c);
+        cLine.style.bottom = (c / SLIDER_MAX) * TRACK_H + 'px';
+        starC.style.bottom = (c / SLIDER_MAX) * TRACK_H + 'px';
     }
-    if (stepCount < MAX_STEPS) {
-        const tc = getTarget(stepCount + 1);
-        targetBandC.style.display = 'block';
-        targetBandC.style.bottom  = ((tc - TARGET_HALF) / SLIDER_MAX) * TRACK_H + 'px';
-        targetBandC.style.height  = (2 * TARGET_HALF / SLIDER_MAX) * TRACK_H + 'px';
+    starC.style.display = (stepCount > 0 && hitHistory[stepCount]) ? 'block' : 'none';
+
+    if (pending) {
+        handleC.style.visibility = 'visible';
+        fillC.style.visibility   = 'visible';
+        cLine.style.display      = 'none';
+        prevTargetC.style.display = 'none';
+        placeBand(targetBandC, getTarget(stepCount));      // the target just aimed at
     } else {
-        targetBandC.style.display = 'none';
+        handleC.style.visibility = 'hidden';
+        fillC.style.visibility   = 'hidden';
+        cLine.style.display      = 'block';
+        if (stepCount >= 1) placeBand(prevTargetC, getTarget(stepCount));
+        else prevTargetC.style.display = 'none';
+        if (stepCount < MAX_STEPS) placeBand(targetBandC, getTarget(stepCount + 1));
+        else targetBandC.style.display = 'none';
     }
 }
 
@@ -277,7 +306,7 @@ function windowStart() { return Math.max(0, stepCount - 5); }
 function dotIndex() { return stepCount - windowStart(); }
 
 // Index of the CURRENT target column (the step the participant is aiming for next).
-function targetColIndex() { return stepCount + 1 - windowStart(); }
+function targetColIndex() { return (pending ? stepCount : stepCount + 1) - windowStart(); }
 
 function buildChartData() {
     const start = windowStart();
@@ -402,7 +431,7 @@ function refreshChart() {
 
 // ── Space: reveal C, score, advance ──
 function step() {
-    if (stepCount >= MAX_STEPS) return;
+    if (pending || stepCount >= MAX_STEPS) return;
     if (!aSet || !bSet) {
         hitIndicator.textContent = 'Click on both sliders A and B to set them first.';
         hitIndicator.classList.remove('hit', 'miss');
@@ -436,6 +465,19 @@ function step() {
     stepDisplay.textContent = stepCount;
     targetCentre = getTarget(stepCount + 1);
 
+    // Show the result for RESULT_MS, then move on to the next target
+    pending = true;
+    slidersPanel.classList.add('locked');
+    updatePrevMarkers();
+    refreshChart();
+    updateC();
+    pendingTimer = setTimeout(finishStep, RESULT_MS);
+}
+
+function finishStep() {
+    pending = false;
+    pendingTimer = null;
+    slidersPanel.classList.remove('locked');
     // Hide the handles for the next step; participants must click again
     sliderA.value = SLIDER_MID;
     sliderB.value = SLIDER_MID;
@@ -443,7 +485,6 @@ function step() {
     bSet = false;
     updateAB();
     updatePrevMarkers();
-
     refreshChart();
     updateC();
 }
@@ -459,6 +500,10 @@ function pickRandomRule() {
 
 // ── Reset ──
 function resetExperiment() {
+    if (pendingTimer) clearTimeout(pendingTimer);
+    pendingTimer = null;
+    pending      = false;
+    slidersPanel.classList.remove('locked');
     stepCount    = 0;
     score        = 0;
     cHistory     = {};
@@ -484,8 +529,8 @@ function resetExperiment() {
 }
 
 // ── Events ──
-function revealA() { aSet = true; updateAB(); clearWarn(); }
-function revealB() { bSet = true; updateAB(); clearWarn(); }
+function revealA() { if (pending) return; aSet = true; updateAB(); clearWarn(); }
+function revealB() { if (pending) return; bSet = true; updateAB(); clearWarn(); }
 function clearWarn() {
     if (hitIndicator.classList.contains('warn')) {
         hitIndicator.textContent = '';

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Slider Control Experiment</title>
-    <link rel="stylesheet" href="experiment.css?v=8">
+    <link rel="stylesheet" href="experiment.css?v=9">
     <script src="Chart.min.js"></script>
 </head>
 <body>
@@ -37,7 +37,7 @@
         Keep <span class="label-c">C</span> in the
         <span class="target-word">target zone</span>.
         Click on each slider to set it, then press <kbd>Space</kbd> to advance one step.
-        Dotted lines show your previous settings.
+        Dotted/dashed lines show your previous settings and the previous target. A ★ means you earned a point.
     </div>
 
     <div class="main-layout">
@@ -73,6 +73,9 @@
                 <div class="slider-label label-c">C</div>
                 <div class="slider-track-outer" id="track-c">
                     <div class="target-band" id="target-band-c"></div>
+                    <div class="prev-target" id="prev-target-c"></div>
+                    <div class="c-line" id="c-line"></div>
+                    <div class="star" id="star-c">★</div>
                     <div class="slider-fill" id="fill-c"></div>
                     <div class="slider-handle handle-c" id="handle-c"></div>
                 </div>
@@ -91,6 +94,6 @@
         <span class="hit-indicator" id="hit-indicator"></span>
     </div>
 
-    <script src="experiment.js?v=12"></script>
+    <script src="experiment.js?v=13"></script>
 </body>
 </html>

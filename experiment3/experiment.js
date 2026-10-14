@@ -8,6 +8,8 @@ const HANDLE_H    = 18;   // handle height in px (rect)
 const MAX_STEPS   = 40;
 
 // chart colours
+const aLine    = 'rgb(25, 118, 210)';   // matches slider A
+const bLine    = 'rgb(198, 40, 40)';    // matches slider B
 const zColour  = 'rgb(0, 204, 102)';
 const zLine    = 'rgb(0, 153, 76)';
 const rShade   = 'rgba(212, 175, 55, 0.5)';
@@ -20,6 +22,8 @@ let score            = 0;
 let targetCentre     = SLIDER_MID;
 let cHistory         = {};
 let hitHistory       = {};   // step → boolean
+let aHistory         = {};   // step → A value used
+let bHistory         = {};   // step → B value used
 let targetTrajectory = [];   // pre-generated random trajectory
 
 // ── DOM ──
@@ -229,18 +233,22 @@ function targetColIndex() { return stepCount + 1 - windowStart(); }
 
 function buildChartData() {
     const start = windowStart();
-    const labels = [], data = [];
+    const labels = [], data = [], aData = [], bData = [];
     for (let i = 0; i <= 10; i++) {
         const s = start + i;
         labels.push(s);
         data.push(cHistory[s] !== undefined ? cHistory[s] : null);
+        aData.push(aHistory[s] !== undefined ? aHistory[s] : null);
+        bData.push(bHistory[s] !== undefined ? bHistory[s] : null);
     }
-    return { labels, data };
+    return { labels, data, aData, bData };
 }
 
 // Initial C: the outcome with both sliders at their starting position.
 function setInitialC() {
     cHistory[0] = computeC(SLIDER_MID, SLIDER_MID);
+    aHistory[0] = SLIDER_MID;
+    bHistory[0] = SLIDER_MID;
 }
 
 // ── Chart ──
@@ -248,7 +256,7 @@ let chart;
 
 function setupChart() {
     const ctx = document.getElementById('progressPlot').getContext('2d');
-    const { labels, data } = buildChartData();
+    const { labels, data, aData, bData } = buildChartData();
 
     chart = new Chart(ctx, {
         type: 'line',
@@ -268,10 +276,34 @@ function setupChart() {
                 data,
                 fill: false,
                 spanGaps: false
+            }, {
+                label: 'A',
+                borderColor: aLine,
+                backgroundColor: aLine,
+                borderWidth: 1.5,
+                borderDash: [5, 4],
+                pointRadius: 3,
+                pointBackgroundColor: aLine,
+                tension: 0,
+                data: aData,
+                fill: false,
+                spanGaps: false
+            }, {
+                label: 'B',
+                borderColor: bLine,
+                backgroundColor: bLine,
+                borderWidth: 1.5,
+                borderDash: [5, 4],
+                pointRadius: 3,
+                pointBackgroundColor: bLine,
+                tension: 0,
+                data: bData,
+                fill: false,
+                spanGaps: false
             }]
         },
         options: {
-            legend: { display: false },
+            legend: { display: true, position: 'top', labels: { boxWidth: 14 } },
             animation: { duration: 0 },
             scales: {
                 yAxes: [{ ticks: { suggestedMin: 0, suggestedMax: SLIDER_MAX, beginAtZero: false } }],
@@ -308,9 +340,11 @@ function setupChart() {
 }
 
 function refreshChart() {
-    const { labels, data } = buildChartData();
+    const { labels, data, aData, bData } = buildChartData();
     chart.data.labels = labels;
     chart.data.datasets[0].data = data;
+    chart.data.datasets[1].data = aData;
+    chart.data.datasets[2].data = bData;
     chart.update();
 }
 
@@ -322,6 +356,8 @@ function step() {
 
     const thisStep = stepCount + 1;
     cHistory[thisStep] = c;
+    aHistory[thisStep] = a;
+    bHistory[thisStep] = b;
 
     const inTarget = c >= targetCentre - TARGET_HALF && c <= targetCentre + TARGET_HALF;
     hitHistory[thisStep] = inTarget;
@@ -360,6 +396,8 @@ function resetExperiment() {
     score        = 0;
     cHistory     = {};
     hitHistory   = {};
+    aHistory     = {};
+    bHistory     = {};
     stepDisplay.textContent  = 0;
     scoreDisplay.textContent = 0;
     hitIndicator.textContent = '';

@@ -170,3 +170,56 @@ input[type="range"].custom-slider {
     font-weight: bold;
     color: #2e7d32;
 }
+
+/* ── Read-only C slider ── */
+#fill-c { background: rgba(46,125,50,0.40); height: 50%; }
+.handle-c { background: #2e7d32; }
+.slider-readonly .slider-track-outer { cursor: not-allowed; }
+
+/* Target region shown on the C track */
+.target-band {
+    position: absolute;
+    left: -6px;
+    width: 72px;
+    box-sizing: border-box;
+    background: rgba(249,168,37,0.85);  /* yellow, same as the current target on the chart (rCurrent) */
+    border: none;
+    border-radius: 0;
+    z-index: 3;
+    pointer-events: none;
+    transition: bottom 0.15s ease;
+}
+
+/* Dotted markers for the previous step's A and B values */
+.prev-marker {
+    position: absolute;
+    left: -6px;
+    width: 72px;
+    height: 0;
+    border-top: 3px dotted;
+    z-index: 3;
+    pointer-events: none;
+    margin-bottom: -1.5px;
+}
+.prev-a { border-color: #1976d2; }
+.prev-b { border-color: #c62828; }
+
+.hit-indicator.warn { color: #c62828; }
+
+/* Step feedback (timeline chart removed) */
+.hit-indicator { font-size: 1.05rem; }
+.hit-indicator.hit  { color: #2e7d32; }
+.hit-indicator.miss { color: #8a6d00; }
+
+
+/* ── Large-slider version (sliders.html: no timeline chart) ── */
+body.large .sliders-panel { gap: 40px; }
+body.large .slider-label { font-size: 1.8rem; }
+body.large .slider-val { font-size: 1.1rem; }
+body.large .slider-track-outer,
+body.large input[type="range"].custom-slider { width: 90px; height: 560px; }
+body.large .slider-track-outer { border-radius: 45px; }
+body.large .slider-fill { border-radius: 0 0 45px 45px; }
+body.large .slider-handle { width: 78px; height: 24px; }
+body.large .target-band,
+body.large .prev-marker { left: -8px; width: 106px; }

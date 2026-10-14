@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slider Control Experiment (sliders only)</title>
+    <link rel="stylesheet" href="experiment.css?v=8">
+</head>
+<body class="large">
+    <h2 style="text-align:center;">Slider Control Task</h2>
+
+    <div class="info-bar">
+        <span>Rule: <strong id="func-name" style="display:inline-block;min-width:200px;">Linear Sum</strong></span>
+        <button id="rule-reveal-btn">Hide Rule</button>
+        <span>Steps: <strong id="step-count">0</strong> / 40</span>
+        <span>Score: <strong id="score-display">0</strong></span>
+        <div style="position:relative;">
+            <button id="rule-toggle">Rule ▾</button>
+            <div id="rule-dropdown" style="display:none; position:absolute; top:110%; left:0; background:#fff; border:1px solid #bbb; border-radius:6px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:100; min-width:180px; padding:4px 0;">
+                <div class="rule-option" data-value="linear_sum">Linear Sum</div>
+                <div class="rule-option" data-value="exp_sum">Exponential Sum</div>
+                <div class="rule-option" data-value="quadratic_sum">Quadratic Sum</div>
+                <div class="rule-option" data-value="linear_product">Linear Product</div>
+                <div class="rule-option" data-value="exp_product">Exponential Product</div>
+                <div class="rule-option" data-value="quadratic_product">Quadratic Product</div>
+                <div class="rule-option" data-value="ridge_sum">Ridge Sum</div>
+                <div class="rule-option" data-value="ridge_product">Ridge Product</div>
+            </div>
+        </div>
+        <label>Condition: <select id="cond-select"></select></label>
+        <button id="reset-btn">Reset</button>
+    </div>
+
+    <div class="instructions">
+        Move sliders <span class="label-a">A</span> and <span class="label-b">B</span>
+        to control outcome <span class="label-c">C</span>.
+        Keep <span class="label-c">C</span> in the
+        <span class="target-word">target zone</span>.
+        Click on each slider to set it, then press <kbd>Space</kbd> to advance one step.
+        Dotted lines show your previous settings.
+    </div>
+
+    <div class="main-layout">
+
+        <!-- Sliders — both on the left -->
+        <div class="sliders-panel">
+            <div class="slider-wrap">
+                <div class="slider-label label-a">A</div>
+                <div class="slider-track-outer" id="track-a">
+                    <div class="prev-marker prev-a" id="prev-a"></div>
+                    <div class="slider-fill" id="fill-a"></div>
+                    <div class="slider-handle handle-a" id="handle-a"></div>
+                    <input type="range" min="0" max="100" value="50"
+                           class="custom-slider" id="slider-a" orient="vertical">
+                </div>
+                <div class="slider-val" id="val-a">50</div>
+            </div>
+
+            <div class="slider-wrap">
+                <div class="slider-label label-b">B</div>
+                <div class="slider-track-outer" id="track-b">
+                    <div class="prev-marker prev-b" id="prev-b"></div>
+                    <div class="slider-fill" id="fill-b"></div>
+                    <div class="slider-handle handle-b" id="handle-b"></div>
+                    <input type="range" min="0" max="100" value="50"
+                           class="custom-slider" id="slider-b" orient="vertical">
+                </div>
+                <div class="slider-val" id="val-b">50</div>
+            </div>
+
+            <!-- C: read-only, shows the last revealed outcome and the current target -->
+            <div class="slider-wrap slider-readonly" title="C cannot be moved directly">
+                <div class="slider-label label-c">C</div>
+                <div class="slider-track-outer" id="track-c">
+                    <div class="target-band" id="target-band-c"></div>
+                    <div class="slider-fill" id="fill-c"></div>
+                    <div class="slider-handle handle-c" id="handle-c"></div>
+                </div>
+                <div class="slider-val" id="val-c">50</div>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="text-align:center; margin-top:6px;">
+        <span class="hit-indicator" id="hit-indicator"></span>
+    </div>
+
+    <script src="experiment.js?v=12"></script>
+</body>
+</html>

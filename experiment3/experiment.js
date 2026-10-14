@@ -3,8 +3,10 @@ const SLIDER_MIN  = 0;
 const SLIDER_MAX  = 100;
 const SLIDER_MID  = SLIDER_MAX / 2;
 const TARGET_HALF = 5;      // target zone = ±5 (10% of range, as before)
-const TRACK_H     = 380;
-const HANDLE_H    = 18;   // handle height in px (rect)
+// Track and handle sizes come from the CSS, so the same script works for
+// the timeline version (index.html) and the large-slider version (sliders.html).
+const TRACK_H     = document.getElementById('track-a').offsetHeight || 380;
+const HANDLE_H    = document.getElementById('handle-a').offsetHeight || 18;
 const MAX_STEPS   = 40;
 
 // chart colours
@@ -12,8 +14,8 @@ const aLine    = 'rgb(25, 118, 210)';   // matches slider A
 const bLine    = 'rgb(198, 40, 40)';    // matches slider B
 const zColour  = 'rgb(0, 204, 102)';
 const zLine    = 'rgb(0, 153, 76)';
-const rShade   = 'rgba(212, 175, 55, 0.5)';
-const rCurrent = 'rgba(46, 160, 67, 0.65)';  // green for current target column
+const rShade   = 'rgba(212, 175, 55, 0.35)';  // upcoming / past target regions (pale yellow)
+const rCurrent = 'rgba(249, 168, 37, 0.85)'; // current target region (yellow, matches C slider band)
 
 // ── State ──
 let functionalForm   = 'linear_sum';
@@ -23,6 +25,8 @@ let targetCentre     = SLIDER_MID;
 let cHistory         = {};
 let hitHistory       = {};   // step → boolean
 let aHistory         = {};   // step → A value used
+let aSet             = false; // has the participant placed A this step?
+let bSet             = false; // has the participant placed B this step?
 let bHistory         = {};   // step → B value used
 let targetTrajectory = [];   // pre-generated random trajectory
 
@@ -36,6 +40,12 @@ const fillB        = document.getElementById('fill-b');
 const handleA      = document.getElementById('handle-a');
 const handleB      = document.getElementById('handle-b');
 const hitIndicator = document.getElementById('hit-indicator');
+const valC         = document.getElementById('val-c');
+const fillC        = document.getElementById('fill-c');
+const handleC      = document.getElementById('handle-c');
+const targetBandC  = document.getElementById('target-band-c');
+const prevA        = document.getElementById('prev-a');
+const prevB        = document.getElementById('prev-b');
 const stepDisplay  = document.getElementById('step-count');
 const scoreDisplay = document.getElementById('score-display');
 const ruleToggle     = document.getElementById('rule-toggle');
@@ -210,14 +220,52 @@ function positionHandle(el, value) {
     el.style.bottom = ((value / SLIDER_MAX) * TRACK_H - HANDLE_H / 2) + 'px';
 }
 
+// Handles (and fills/values) stay hidden until the participant clicks the
+// slider on each step.
+function showSlider(handle, fill, val, value, isSet) {
+    handle.style.visibility = isSet ? 'visible' : 'hidden';
+    fill.style.visibility   = isSet ? 'visible' : 'hidden';
+    val.textContent         = isSet ? value : '–';
+    fill.style.height = fillPct(value) + '%';
+    positionHandle(handle, value);
+}
+
 function updateAB() {
-    const a = +sliderA.value, b = +sliderB.value;
-    valA.textContent = a;
-    valB.textContent = b;
-    fillA.style.height = fillPct(a) + '%';
-    fillB.style.height = fillPct(b) + '%';
-    positionHandle(handleA, a);
-    positionHandle(handleB, b);
+    showSlider(handleA, fillA, valA, +sliderA.value, aSet);
+    showSlider(handleB, fillB, valB, +sliderB.value, bSet);
+}
+
+// Dotted markers for the A and B values used on the previous step.
+function updatePrevMarkers() {
+    // No markers before the first step has been taken
+    const show = stepCount > 0;
+    prevA.style.display = show ? 'block' : 'none';
+    prevB.style.display = show ? 'block' : 'none';
+    if (!show) return;
+    const pa = aHistory[stepCount], pb = bHistory[stepCount];
+    if (pa !== undefined) prevA.style.bottom = (pa / SLIDER_MAX) * TRACK_H + 'px';
+    if (pb !== undefined) prevB.style.bottom = (pb / SLIDER_MAX) * TRACK_H + 'px';
+}
+
+// ── Read-only C slider ──
+// Shows the most recently revealed C (it only updates when Space is pressed,
+// so it never gives away C before the participant commits) and the target
+// region for the step they are aiming at next.
+function updateC() {
+    const c = cHistory[stepCount];
+    if (c !== undefined) {
+        valC.textContent = c;
+        fillC.style.height = fillPct(c) + '%';
+        positionHandle(handleC, c);
+    }
+    if (stepCount < MAX_STEPS) {
+        const tc = getTarget(stepCount + 1);
+        targetBandC.style.display = 'block';
+        targetBandC.style.bottom  = ((tc - TARGET_HALF) / SLIDER_MAX) * TRACK_H + 'px';
+        targetBandC.style.height  = (2 * TARGET_HALF / SLIDER_MAX) * TRACK_H + 'px';
+    } else {
+        targetBandC.style.display = 'none';
+    }
 }
 
 // ── Chart window helpers ──
@@ -254,7 +302,10 @@ function setInitialC() {
 // ── Chart ──
 let chart;
 
+// The timeline chart has been removed from the page; these functions do
+// nothing when there is no canvas (kept so it can be restored easily).
 function setupChart() {
+    if (!document.getElementById('progressPlot') || typeof Chart === 'undefined') return;
     const ctx = document.getElementById('progressPlot').getContext('2d');
     const { labels, data, aData, bData } = buildChartData();
 
@@ -340,6 +391,7 @@ function setupChart() {
 }
 
 function refreshChart() {
+    if (!chart) return;
     const { labels, data, aData, bData } = buildChartData();
     chart.data.labels = labels;
     chart.data.datasets[0].data = data;
@@ -351,6 +403,13 @@ function refreshChart() {
 // ── Space: reveal C, score, advance ──
 function step() {
     if (stepCount >= MAX_STEPS) return;
+    if (!aSet || !bSet) {
+        hitIndicator.textContent = 'Click on both sliders A and B to set them first.';
+        hitIndicator.classList.remove('hit', 'miss');
+        hitIndicator.classList.add('warn');
+        return;
+    }
+    hitIndicator.classList.remove('warn');
     const a = +sliderA.value, b = +sliderB.value;
     const c = computeC(a, b);
 
@@ -361,24 +420,32 @@ function step() {
 
     const inTarget = c >= targetCentre - TARGET_HALF && c <= targetCentre + TARGET_HALF;
     hitHistory[thisStep] = inTarget;
+    // Feedback: did this step earn a point?
+    hitIndicator.classList.remove('hit', 'miss');
     if (inTarget) {
         score++;
         scoreDisplay.textContent = score;
-        hitIndicator.textContent = '✓ On target!';
+        hitIndicator.textContent = '✓ On target! +1 point';
+        hitIndicator.classList.add('hit');
     } else {
-        hitIndicator.textContent = '';
+        hitIndicator.textContent = '✗ Missed the target. No point this step.';
+        hitIndicator.classList.add('miss');
     }
 
     stepCount++;
     stepDisplay.textContent = stepCount;
     targetCentre = getTarget(stepCount + 1);
 
-    // Reset sliders to centre for next step
+    // Hide the handles for the next step; participants must click again
     sliderA.value = SLIDER_MID;
     sliderB.value = SLIDER_MID;
+    aSet = false;
+    bSet = false;
     updateAB();
+    updatePrevMarkers();
 
     refreshChart();
+    updateC();
 }
 
 function pickRandomRule() {
@@ -401,6 +468,9 @@ function resetExperiment() {
     stepDisplay.textContent  = 0;
     scoreDisplay.textContent = 0;
     hitIndicator.textContent = '';
+    hitIndicator.classList.remove('warn', 'hit', 'miss');
+    aSet = false;
+    bSet = false;
     sliderA.value = SLIDER_MID;
     sliderB.value = SLIDER_MID;
     targetTrajectory = generateTrajectory(MAX_STEPS);
@@ -409,11 +479,23 @@ function resetExperiment() {
     setInitialC();
     updateAB();
     if (chart) refreshChart();
+    updateC();
+    updatePrevMarkers();
 }
 
 // ── Events ──
-sliderA.addEventListener('input', updateAB);
-sliderB.addEventListener('input', updateAB);
+function revealA() { aSet = true; updateAB(); clearWarn(); }
+function revealB() { bSet = true; updateAB(); clearWarn(); }
+function clearWarn() {
+    if (hitIndicator.classList.contains('warn')) {
+        hitIndicator.textContent = '';
+        hitIndicator.classList.remove('warn');
+    }
+}
+sliderA.addEventListener('pointerdown', revealA);
+sliderB.addEventListener('pointerdown', revealB);
+sliderA.addEventListener('input', revealA);
+sliderB.addEventListener('input', revealB);
 
 ruleToggle.addEventListener('click', function (e) {
     e.stopPropagation();
@@ -428,7 +510,7 @@ ruleDropdown.querySelectorAll('.rule-option').forEach(function (el) {
         ruleDropdown.querySelectorAll('.rule-option').forEach(o => o.classList.remove('active'));
         this.classList.add('active');
         ruleDropdown.style.display = 'none';
-        if (stepCount === 0) { setInitialC(); refreshChart(); }
+        if (stepCount === 0) { setInitialC(); refreshChart(); updateC(); }
     });
 });
 
@@ -470,6 +552,8 @@ targetCentre     = getTarget(1);
 setInitialC();
 updateAB();
 setupChart();
+updateC();
+updatePrevMarkers();
 // Start with rule hidden
 funcName.style.visibility = 'hidden';
 ruleRevealBtn.textContent  = 'Show Rule';
